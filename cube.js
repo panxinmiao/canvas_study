@@ -2,7 +2,18 @@
  * @author PanXinmiao
  * HAVE FUN AND ENJOY IT!
  */
-function cube(cubeWidth){
+
+
+//命名空间CUBE
+var CUBE = CUBE||{};
+
+/**
+ *  @param cubeWidth 方块单位边长
+ *  @param h,w 窗口高度和宽度，默认全屏
+ *  @param 是否显示网格
+ */
+CUBE.cube = function(cubeWidth, h ,w, drawGrid){
+    CUBE.RUNNING = true;
     var body = document.getElementsByTagName('body')[0];
     body.style.overflowY = 'hidden';
     //document.getElementById('container').style.display='block';
@@ -20,18 +31,23 @@ function cube(cubeWidth){
     var canvas = document.createElement('canvas');
     body.appendChild(container);
     container.appendChild(canvas);
-    var h = window.innerHeight;
-    var w = window.innerWidth;
+    
+    var context = canvas.getContext('2d');
+    //全屏
+    //document.documentElement.webkitRequestFullScreen();
+    
+    var h = h||window.innerHeight;
+    var w = w||window.innerWidth;
+    var drawGrid = drawGrid||false;
     cubeWidth || (cubeWidth = 30);
     (cubeWidth > 30) && (cubeWidth = 30);
     (cubeWidth < 4) && (cubeWidth = 4);
-    canvas.width = w;
-    canvas.height = h;
+    canvas.width = w+10;
+    canvas.height = h+10;
     var offsetH = h%cubeWidth;
     var offsetW = w%cubeWidth;
     var rows = (h-offsetH)/cubeWidth;
     var cols = (w-offsetW)/cubeWidth;
-    var context = canvas.getContext('2d');
     context.translate(offsetW,offsetH);
     var gameFlag = [];
     var brick = null;
@@ -70,16 +86,21 @@ function cube(cubeWidth){
     var GAME_PAUSE=2;
     var GAME_WAIT_ANIMATION=3;
     var GAME_OVER=4;
-
-
-    var SPEED_INTERVAL = 500;
+    
+    //方块下落速度(ms)
+    //var SPEED_INTERVAL = 500;
+    
     var ANIMATION_INTERVAL = 300;
 
     var gameStatus = GAME_RUNNING;
+    
+    //方块下落速度
+    var speed = 2;
 
     var lastAutoDropTime;
     var lastAnimationTime;
     var needDraw = true;
+    var stop = false;
     
     
     function resetGame(){
@@ -89,8 +110,9 @@ function cube(cubeWidth){
                gameFlag[col][row]=false;
             }
         }
-        brick = new Brick(getRandom(0,18));
-        brick.position.x = getRandom(4, cols-4);
+        nextBrick();
+        /*brick = new Brick(getRandom(0,18));
+        brick.position.x = getRandom(4, cols-4);*/
     };
     
     function Brick(type){
@@ -195,14 +217,31 @@ function cube(cubeWidth){
 
 
     function getRandColor(){
-        var colors = ['blue','yellow','red','green','gray','purple'];
-        return colors[getRandom(0, colors.length-1)];
+        var colors = ['blue','orange','red','green','gray','purple','navy'];
+        return colors[CUBE.getRandom(0, colors.length-1)];
     }
 
 
     function drawPanel(){
         context.clearRect(0, 0, w, h);
-        //context.strokeRect(0, 0, 300, 570);
+        //context.strokeRect(0, 0, w, h);
+        
+        if(drawGrid){
+            context.lineWidth=0.5;
+            for(var i=cubeWidth+0.5;i<w;i+=cubeWidth){
+                context.beginPath();
+                context.moveTo(i,0);
+                context.lineTo(i,h);
+                context.stroke();
+            }
+            
+            for(var i=cubeWidth+0.5;i<h;i+=cubeWidth){
+                context.beginPath();
+                context.moveTo(0,i);
+                context.lineTo(w,i);
+                context.stroke();
+            }
+        }
         
         for(var row=0; row<rows; row++){
             for(var col=0; col<cols; col++){
@@ -213,24 +252,31 @@ function cube(cubeWidth){
                     context.restore();
                 }else{
                     if(gameFlag[col][row]){
+                        context.save();
+                        context.fillStyle=gameFlag[col][row];
                         context.fillRect(cubeWidth*col+1, cubeWidth*(row)+1,cubeWidth-2, cubeWidth-2);
+                        context.restore();
                     }
                 }
             }
         }
         if(brick){
             context.save();
-            context.fillStyle='blue';
+            context.fillStyle=brick.color||'blue';
             var pos_X=brick.pos_X;
             var pos_Y=brick.pos_Y;
+            var shadow = getShadowBrick(brick);
+            context.strokeStyle=brick.color||'blue';
+            context.lineWidth=1;
             for (var i = 0; i < 4; i++) {
                 context.fillRect(cubeWidth*(brick.position.x+pos_X[i]) + 1, cubeWidth * (brick.position.y+pos_Y[i])+1, cubeWidth-2, cubeWidth-2);
+                context.strokeRect(cubeWidth*(shadow.position.x+pos_X[i]) + 1, cubeWidth * (shadow.position.y+pos_Y[i])+1, cubeWidth-2, cubeWidth-2);
             }
             context.restore();
         }
     }
-
-    document.addEventListener('keydown',function(e){
+    
+    function controlListener(e){
         switch(e.keyCode){
         case 37:
             moveLeft();
@@ -244,10 +290,28 @@ function cube(cubeWidth){
         case 40:
             moveDown();
             break;
+        case 13:
+        case 32:
+            dropDown();
+            break;
+        case 27:
+            destroy();
+            break;
+        case 71:
+            drawGrid = !drawGrid;
+            break;
+        case 188:
+            speed>1 && speed--
+            break;
+        case 190:
+            speed<10 && speed++
+            break;
         }
         redraw();
         e.preventDefault();
-    });
+    }
+
+    document.addEventListener('keydown',controlListener);
 
     function moveLeft(){
         for(var i=0;i<4;i++){
@@ -274,32 +338,52 @@ function cube(cubeWidth){
     };
 
     function moveDown(){
-        if(!isDrop()){
+        if(!isDrop(brick)){
             brick.moveDown();
+        }else{
+            drop();
         }
+    }
+    
+    function dropDown(){
+        brick = getShadowBrick(brick);
+        drop();
     }
 
     function nextBrick(){
-        brick = new Brick(getRandom(0,18));
-        brick.position.x = getRandom(4, cols-4);
+        brick = new Brick(CUBE.getRandom(0,18));
+        brick.position.x = CUBE.getRandom(4, cols-4);
+        brick.color = getRandColor();
         lastAutoDropTime = void 0;
     }
 
-    function isDrop() {
-        if(brick==null){
+    function isDrop(brick) {
+        if(brick == null){
             return true;
         }
         for(var i=0;i<4;i++){
             if(brick.position.y+ brick.pos_Y[i]==rows-1){
-                drop();
                 return true;
             }
             if(gameFlag[brick.position.x+brick.pos_X[i]][brick.position.y+brick.pos_Y[i]+1]){
-                drop();
                 return true;
             }
         }
         return false;
+    }
+    
+    function getShadowBrick(){
+        if(brick == null){
+            return null;
+        }
+        var shadow = new Brick(brick.type);
+        shadow.position.x = brick.position.x;
+        shadow.position.y = brick.position.y;
+        shadow.color = brick.color;
+        while(!isDrop(shadow)){
+            shadow.position.y++;
+        }
+        return shadow;
     }
 
     function drop(){
@@ -307,7 +391,7 @@ function cube(cubeWidth){
             return;
         }
         for(var i=0;i<4;i++){
-            gameFlag[brick.position.x+brick.pos_X[i]][brick.position.y+brick.pos_Y[i]]=true;
+            gameFlag[brick.position.x+brick.pos_X[i]][brick.position.y+brick.pos_Y[i]]=brick.color;
         }
         brick=null;
         checkFullRow();
@@ -401,6 +485,7 @@ function cube(cubeWidth){
             tempBrick=new Brick(brick.type+1);
         }
         tempBrick.position = brick.position;
+        tempBrick.color = brick.color;
         if(canDoChange(tempBrick)){
             brick=tempBrick;
         }
@@ -431,7 +516,7 @@ function cube(cubeWidth){
             if(!lastAutoDropTime){
                 lastAutoDropTime = time;
             }else{
-                if(time - lastAutoDropTime > SPEED_INTERVAL){
+                if(time - lastAutoDropTime > 1000/speed){
                     moveDown();
                     redraw();
                     lastAutoDropTime = time;
@@ -452,25 +537,36 @@ function cube(cubeWidth){
             drawPanel();
             needDraw = false;
         }
-        
-        requestAnimationFrame(run);
+        if(CUBE.RUNNING){
+            requestAnimationFrame(run);
+        }
     }
     resetGame();
     run();
+    
+    function destroy(){
+        CUBE.RUNNING = false;
+        container.removeChild(canvas);
+        body.removeChild(container);
+        document.removeEventListener('keydown',controlListener);
+    }
 };
 
-var keyStatck = [];
+CUBE.keyStatck = [];
 
 document.addEventListener('keydown',function(e){
-    
+    if(CUBE.RUNNING){
+        return;
+    }
     if(e.altKey && e.ctrlKey && e.keyCode >= 37 && e.keyCode <= 40){
-        keyStatck.push(e.keyCode);
-        if(keyStatck.length>8){
-            keyStatck.shift();
+        CUBE.keyStatck.push(e.keyCode);
+        if(CUBE.keyStatck.length>8){
+            CUBE.keyStatck.shift();
         }
-        if(keyStatck.join() == '38,38,40,40,37,37,39,39'){
+        if(CUBE.keyStatck.join() == '38,38,40,40,37,37,39,39'){
             console.log('bingo!~~~~~~');
-            cube(getRandom(1, 6)*5);
+            //随机方块大小，边长10,15,20,25,30,35,40
+            CUBE.cube(CUBE.getRandom(2, 8)*5);
         }
         e.preventDefault();
     }else{
@@ -478,8 +574,8 @@ document.addEventListener('keydown',function(e){
     }
 });
 
-function getRandom(min ,max){
+CUBE.getRandom = function(min ,max){
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-console.log("Press Ctrl+Alt and ↑ ↑ ↓ ↓ ← ← → → , have fun and enjoy it!")
+//console.log("Press Ctrl+Alt and ↑ ↑ ↓ ↓ ← ← → → , have fun and enjoy it!")
