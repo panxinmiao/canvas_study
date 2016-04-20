@@ -11,8 +11,9 @@ var CUBE = CUBE||{};
  *  @param cubeWidth 方块单位边长
  *  @param h,w 窗口高度和宽度，默认全屏
  *  @param 是否显示网格
+ *  @param 是否显示投影
  */
-CUBE.cube = function(cubeWidth, h ,w, drawGrid){
+CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
     CUBE.RUNNING = true;
     var body = document.getElementsByTagName('body')[0];
     body.style.overflowY = 'hidden';
@@ -39,6 +40,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
     var h = h||window.innerHeight;
     var w = w||window.innerWidth;
     var drawGrid = drawGrid||false;
+    var showShadow = showShadow||true;
     cubeWidth || (cubeWidth = 30);
     (cubeWidth > 30) && (cubeWidth = 30);
     (cubeWidth < 4) && (cubeWidth = 4);
@@ -90,7 +92,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
     //方块下落速度(ms)
     //var SPEED_INTERVAL = 500;
     
-    var ANIMATION_INTERVAL = 300;
+    var ANIMATION_INTERVAL = 200;
 
     var gameStatus = GAME_RUNNING;
     
@@ -217,7 +219,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
 
 
     function getRandColor(){
-        var colors = ['blue','orange','red','green','gray','purple','navy'];
+        var colors = ['mediumblue','darkorange','red','green','gray','purple','teal','blueviolet'];
         return colors[CUBE.getRandom(0, colors.length-1)];
     }
 
@@ -227,7 +229,9 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
         //context.strokeRect(0, 0, w, h);
         
         if(drawGrid){
+            context.save();
             context.lineWidth=0.5;
+            context.strokeStyle = 'gray';
             for(var i=cubeWidth+0.5;i<w;i+=cubeWidth){
                 context.beginPath();
                 context.moveTo(i,0);
@@ -241,6 +245,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
                 context.lineTo(w,i);
                 context.stroke();
             }
+            context.restore();
         }
         
         for(var row=0; row<rows; row++){
@@ -270,10 +275,15 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
             context.lineWidth=1;
             for (var i = 0; i < 4; i++) {
                 context.fillRect(cubeWidth*(brick.position.x+pos_X[i]) + 1, cubeWidth * (brick.position.y+pos_Y[i])+1, cubeWidth-2, cubeWidth-2);
-                context.strokeRect(cubeWidth*(shadow.position.x+pos_X[i]) + 1, cubeWidth * (shadow.position.y+pos_Y[i])+1, cubeWidth-2, cubeWidth-2);
+                showShadow && context.strokeRect(cubeWidth*(shadow.position.x+pos_X[i]) + 1, cubeWidth * (shadow.position.y+pos_Y[i])+1, cubeWidth-2, cubeWidth-2);
             }
             context.restore();
         }
+/*        if(message){
+            var TEXT_X = 65;
+            var TEXT_Y = h/2+35;
+            context.fillText(message,TEXT_X,TEXT_Y);
+        }*/
     }
     
     function controlListener(e){
@@ -299,6 +309,9 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid){
             break;
         case 71:
             drawGrid = !drawGrid;
+            break;
+        case 83:
+            showShadow = !showShadow;
             break;
         case 188:
             speed>1 && speed--
@@ -564,8 +577,11 @@ document.addEventListener('keydown',function(e){
             CUBE.keyStatck.shift();
         }
         if(CUBE.keyStatck.join() == '38,38,40,40,37,37,39,39'){
-            console.log('bingo!~~~~~~');
+            console.log('Bingo!~~~~~~');
+            console.log('%cPanXinmiao presents, have fun and enjoy it!', "color:blue");
+            console.log('Keys:\n← : move left\n→ : move right\n↓ : move down\n↑ : change\nspace : drop\ns : toggle shadow\n, : speed down\n. : speed up\ng : toggle grid')
             //随机方块大小，边长10,15,20,25,30,35,40
+            //CUBE.cube(CUBE.getRandom(2, 8)*5,600,400);
             CUBE.cube(CUBE.getRandom(2, 8)*5);
         }
         e.preventDefault();
