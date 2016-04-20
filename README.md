@@ -25,3 +25,5 @@ space : drop directly
 s   :   show/hide shadow
 
 g   :   show/hide grid
+
+Esc :   exit
