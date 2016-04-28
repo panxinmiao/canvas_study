@@ -34,6 +34,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
     container.appendChild(canvas);
     
     var context = canvas.getContext('2d');
+    
     //全屏
     //document.documentElement.webkitRequestFullScreen();
     
@@ -44,8 +45,8 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
     cubeWidth || (cubeWidth = 30);
     (cubeWidth > 30) && (cubeWidth = 30);
     (cubeWidth < 4) && (cubeWidth = 4);
-    canvas.width = w+10;
-    canvas.height = h+10;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     var offsetH = h%cubeWidth;
     var offsetW = w%cubeWidth;
     var rows = (h-offsetH)/cubeWidth;
@@ -55,7 +56,6 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
     var brick = null;
     var fullRow = [];
     
-
     /*
      * 方块类型
      */
@@ -113,6 +113,7 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
             }
         }
         nextBrick();
+        context.clearRect(0, 0, window.innerWidth, window.innerHeight);
         /*brick = new Brick(getRandom(0,18));
         brick.position.x = getRandom(4, cols-4);*/
     };
@@ -554,8 +555,6 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
             requestAnimationFrame(run);
         }
     }
-    resetGame();
-    run();
     
     function destroy(){
         CUBE.RUNNING = false;
@@ -563,6 +562,92 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
         body.removeChild(container);
         document.removeEventListener('keydown',controlListener);
     }
+    
+    
+    
+    function start(){
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        context.save();
+        context.clearRect(0, 0, w, h);
+        context.textAlign='center';
+        context.textBaseline='middle';
+        context.fillStyle='blue';
+        context.strokeStyle='yellow';
+        context.font='68px impact';
+        context.shadowColor='rgba(0,0,0,0.8)';
+        context.shadowOffsetX=5;
+        context.shadowOffsetY=5;
+        context.shadowBlur=10;
+        var text = "PanXinmiao Presents";
+        context.fillText(text,w/2,h/5);
+        context.strokeText(text,w/2,h/5);
+        context.fillStyle='orange';
+        context.strokeStyle='green';
+        text = "Have Fun";
+        context.fillText(text,w/2,2*h/5);
+        context.strokeText(text,w/2,2*h/5);
+        
+        context.fillStyle='black';
+        context.font='20px sans-serif';
+        context.fillText("press any key to continue",w/2,2*h/3);
+        context.restore();
+        //context.strokeText(text,canvas.width/2,canvas.height/2);
+        
+        var pressAnyKeyListener = function(e){
+            e.preventDefault();
+            document.removeEventListener('keydown',pressAnyKeyListener);
+            showControlPage();
+        }
+        document.addEventListener('keydown', pressAnyKeyListener);
+    }
+    
+    function showControlPage(){
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        context.save();
+        context.clearRect(0, 0, w, h);
+        context.textAlign='center';
+        context.textBaseline='middle';
+        context.shadowColor='rgba(0,0,0,0.8)';
+        context.shadowOffsetX=5;
+        context.shadowOffsetY=5;
+        context.shadowBlur=10;
+        context.fillStyle='red';
+        context.strokeStyle='yellow';
+        var pos_w = w/2;
+        var pos_h = h/6;
+        context.font='40px impact';
+        context.fillText("Control List",pos_w,h/6-20);
+        context.strokeText("Control List",pos_w,h/6-20);
+        context.fillStyle='green';
+        context.font='20px sans-serif';
+        context.fillText("move left     :     ←  ",pos_w,pos_h+50);
+        context.fillText("move right    :     →  ",pos_w,pos_h+80);
+        context.fillText("move down     :     ↓  ",pos_w,pos_h+110);
+        context.fillText("change        :     ↑  ",pos_w,pos_h+140);
+        context.fillText("drop          :   space ",pos_w,pos_h+170);
+        context.fillText("speed down    :      ,  ",pos_w,pos_h+200);
+        context.fillText("speed up      :      .  ",pos_w,pos_h+230);
+        context.fillText("toggle shadow :      s  ",pos_w,pos_h+260);
+        context.fillText("toggle grid   :      g  ",pos_w,pos_h+290);
+        
+        context.fillStyle='black';
+        context.font='20px sans-serif';
+        context.fillText("press any key to continue",pos_w,2*h/3);
+        context.restore();
+        
+        var pressAnyKeyListener = function(e){
+            e.preventDefault();
+            document.removeEventListener('keydown',pressAnyKeyListener);
+            resetGame();
+            run();
+        }
+        document.addEventListener('keydown', pressAnyKeyListener);
+    }
+    
+    start();
+    
 };
 
 CUBE.keyStatck = [];
