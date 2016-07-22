@@ -227,7 +227,9 @@ CUBE.cube = function(cubeWidth, h ,w, drawGrid, showShadow){
 
     function drawPanel(){
         context.clearRect(0, 0, w, h);
-        //context.strokeRect(0, 0, w, h);
+        if(w<window.innerWidth || h< window.innerHeight){
+            context.strokeRect(0, 0, w, h);
+        }
         
         if(drawGrid){
             context.save();
